@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversión a IEEE 754</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+        .contenido {
+            text-align: center;
+            width: 300px; /* Ajusta el ancho según sea necesario */
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="contenido">
+        <h1>Conversión a IEEE 754</h1>
+        <form>
+            <p>Ingrese un número decimal</p>
+            <input type="number" id="decimal" class="form-control mb-2">
+            <input type="button" value="Convertir a IEEE 754" onclick="convertirIEEE754()">   
+        </form>
+
+        <div id="respuesta" class="mt-3"></div>
+
+        <!-- Nuevo recuadro para mostrar el bit de signo, exponente y mantisa -->
+        <div id="resultadoDetallado" class="card" style="display: none;">
+            <h5>Detalles de la Conversión</h5>
+            <p><strong>Bit de signo:</strong> <span id="bitSigno"></span></p>
+            <p><strong>Exponente:</strong> <span id="exponente"></span></p>
+            <p><strong>Mantisa:</strong> <span id="mantisa"></span></p>
+        </div>
+    </div>
+
+    <script>
+        function convertirIEEE754() {
+            let valor = parseFloat(document.getElementById("decimal").value);
+            if (isNaN(valor)) {
+                document.getElementById("respuesta").innerText = "Número inválido.";
+                document.getElementById("resultadoDetallado").style.display = "none"; // Ocultar detalles
+                return;
+            }
+
+            let signo = valor < 0 ? 1 : 0;
+            valor = Math.abs(valor);
+
+            let parteEntera = Math.floor(valor);
+            let parteFraccionaria = valor - parteEntera;
+
+            let binEntero = parteEntera.toString(2);
+
+            let binFraccionario = "";
+            let precision = 24;
+
+            while (parteFraccionaria > 0 && binFraccionario.length < precision) {
+                parteFraccionaria *= 2;
+                if (parteFraccionaria >= 1) {
+                    binFraccionario += "1";
+                    parteFraccionaria -= 1;
+                } else {
+                    binFraccionario += "0";
+                }
+            }
+
+            let binarioCompleto = binEntero + "." + binFraccionario;
+            let indexPunto = binarioCompleto.indexOf(".");
+            let indexPrimerUno = binarioCompleto.indexOf("1");
+
+            let exponente, mantisa;
+
+            if (indexPrimerUno < indexPunto) {
+                exponente = indexPunto - indexPrimerUno - 1;
+                mantisa = binarioCompleto.slice(indexPrimerUno + 1).replace(".", "");
+            } else {
+                exponente = -(indexPrimerUno - indexPunto);
+                mantisa = binarioCompleto.slice(indexPrimerUno + 1).replace(".", "");
+            }
+
+            let exponenteSesgado = (127 + exponente).toString(2).padStart(8, "0");
+
+            let mantisaCompleta = mantisa.padEnd(24, "0");
+            if (mantisaCompleta[23] === "1") {
+                mantisa = (parseInt(mantisaCompleta.slice(0, 23), 2) + 1).toString(2).padStart(23, "0");
+            } else {
+                mantisa = mantisaCompleta.slice(0, 23);
+            }
+
+            let ieee754 = `${signo}${exponenteSesgado}${mantisa}`;
+
+            document.getElementById("respuesta").innerText = 
+                `IEEE 754: ${ieee754}`;
+
+            // Mostrar detalles
+            document.getElementById("bitSigno").innerText = signo;
+            document.getElementById("exponente").innerText = exponenteSesgado;
+            document.getElementById("mantisa").innerText = mantisa;
+            document.getElementById("resultadoDetallado").style.display = "block"; // Mostrar detalles
+        }
+    </script>
+
+</body>
+</html>
